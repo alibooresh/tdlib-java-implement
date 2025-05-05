@@ -13,8 +13,7 @@ import java.io.BufferedReader;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.NavigableSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -54,7 +53,8 @@ public final class Example {
     private static final String newLine = System.getProperty("line.separator");
     private static final String commandsLine = "Enter command (gcs - GetChats, gc <chatId> - GetChat, me - GetMe, sm <chatId> <message> - SendMessage, lo - LogOut, q - Quit): ";
     private static volatile String currentPrompt = null;
-
+    private static TdApi.User finalUser;
+    private static boolean isFound=false;
     private static void print(String str) {
         if (currentPrompt != null) {
             System.out.println("");
@@ -236,12 +236,113 @@ public final class Example {
                     haveAuthorization = false;
                     client.send(new TdApi.Close(), defaultHandler);
                     break;
+                case "a1":
+                    client.send(new TdApi.GetUserFullInfo(146637350L), defaultHandler);
+                    break;
+                case "a2":
+                    client.send(new TdApi.GetAuthorizationState(), defaultHandler);
+                    break;
+                case "a3":
+                    client.send(new TdApi.GetUserProfilePhotos(146637350L,1,1), defaultHandler);
+                    break;
+                case "a4":
+                    client.send(new TdApi.GetUserLink(), defaultHandler);
+                    break;
+                case "a5":
+                    client.send(new TdApi.GetUserPrivacySettingRules(new TdApi.UserPrivacySetting() {
+                        @Override
+                        public int getConstructor() {
+                            return 0;
+                        }
+                    }), defaultHandler);
+                    break;
+                case "a6":
+                    client.send(new TdApi.GetUserSupportInfo(146637350L), defaultHandler);
+                    break;
+                case "a7":
+                    client.send(new TdApi.GetContacts(), defaultHandler);
+                    break;
+                case "a8":
+                    client.send(new TdApi.GetApplicationConfig(), defaultHandler);
+                    break;
+                case "a9":
+                    client.send(new TdApi.GetActiveSessions(), defaultHandler);
+                    break;
+                case "a10":
+                    client.send(new TdApi.GetChatActiveStories(1002056530961L), defaultHandler);
+                    break;
+                case "a11":
+                    client.send(new TdApi.GetChatFolder(6), defaultHandler);
+                    break;
+                case "a12":
+                    client.send(new TdApi.GetBasicGroup(123456L), defaultHandler);
+                    break;
+                case "a13":
+                    client.send(new TdApi.GetArchiveChatListSettings(), defaultHandler);
+                    break;
+                case "a14":
+                    client.send(new TdApi.GetTimeZones(), defaultHandler);
+                    break;
+                case "a15":
+                    client.send(new TdApi.GetChatMessageByDate(7398702642L,1743877837), defaultHandler);
+                    break;
+                case "a16":
+                    client.send(new TdApi.GetAccountTtl(), defaultHandler);
+                    break;
+                case "a17":
+                    client.send(new TdApi.GetDatabaseStatistics(), defaultHandler);
+                    break;
+                case "a18":
+                    client.send(new TdApi.GetAutoDownloadSettingsPresets(), defaultHandler);
+                    break;
+                case "a19":
+//                    client.send(new TdApi.GetBasicGroupFullInfo(), defaultHandler);
+                    break;
+                case "a20":
+                    client.send(new TdApi.GetAutosaveSettings(), defaultHandler);
+                    break;
+                case "a21":
+                    client.send(new TdApi.GetMessages(7398702642L,new long[]{849035132928L,849578295296L}), defaultHandler);
+                    break;
+                case "a22":
+                    client.send(new TdApi.GetMessageProperties(7398702642L,849035132928L), defaultHandler);
+                    break;
+                case "a23":
+                    client.send(new TdApi.GetMessageReadDate(425792648L,850387795968L), defaultHandler);
+                    break;
+                case "a24":
+                    getUserByNumber("989393043585");
+                    break;
                 default:
                     System.err.println("Unsupported command: " + command);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             print("Not enough arguments");
         }
+    }
+    private static void getUserByNumber(String number) {
+        client.send(new TdApi.GetContacts(), new Client.ResultHandler() {
+            @Override
+            public void onResult(TdApi.Object object) {
+                TdApi.Users users = (TdApi.Users) object;
+                for (long userId : users.userIds) {
+                    client.send(new TdApi.GetUser(userId), new Client.ResultHandler() {
+                        @Override
+                        public void onResult(TdApi.Object object) {
+                            TdApi.User user = (TdApi.User) object;
+                            if (user.phoneNumber.equals(number)) {
+                                finalUser=user;
+                                isFound=true;
+                                print("User found: " + user.id);
+                            }
+                        }
+                    });
+                    if(isFound) {
+                        break;
+                    }
+                }
+            }
+        });
     }
 
     private static void getMainChatList(final int limit) {
